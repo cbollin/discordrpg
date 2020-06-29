@@ -10,6 +10,7 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 const Users = sequelize.import('models/Users');
 const CurrencyShop = sequelize.import('models/CurrencyShop');
 const UserItems = sequelize.import('models/UserItems');
+const UserStats = sequelize.import('models/UserStats');
 
 UserItems.belongsTo(CurrencyShop, { foreignKey: 'item_id', as: 'item' });
 
@@ -29,8 +30,16 @@ Users.prototype.addItem = async function(item) {
 Users.prototype.getItems = function() {
 	return UserItems.findAll({
 		where: { user_id: this.user_id },
-		include: ['item'],
+		include: ['item']
 	});
 };
 
-module.exports = { Users, CurrencyShop, UserItems };
+CurrencyShop.getItems = function() {
+	return CurrencyShop.findAll({
+		order: [
+            ['cost', 'ASC'],
+        ],
+	})
+}
+
+module.exports = { Users, CurrencyShop, UserItems, UserStats };
