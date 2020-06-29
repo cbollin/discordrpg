@@ -2,7 +2,7 @@ const { prefix, token } = require('./config.json');
 const Discord = require('discord.js');
 
 const client = new Discord.Client();
-const { Users, CurrencyShop, UserItems } = require('./dbObjects');
+const { Users, CurrencyShop, UserItems, UserStats } = require('./dbObjects');
 const { Op } = require('sequelize');
 const currency = new Discord.Collection();
 
@@ -30,6 +30,8 @@ Reflect.defineProperty(currency, 'getBalance', {
 });
 
 client.once('ready', async () => {
+	// add here to sync
+	// UserStats.sync();
 	const storedBalances = await Users.findAll();
 	storedBalances.forEach(b => currency.set(b.user_id, b));
 	console.log(`Logged in as ${client.user.tag}!`);
@@ -102,13 +104,24 @@ client.on('message', async message => {
 		} else if (item.name === 'Gamer Fuel'){
 			message.channel.send(`You've bought a ${item.name} <:gfuel:725912048872980541>`);
 			return;
+		} else if (item.name === 'Panchos Burrito'){
+			message.channel.send(`You've bought a ${item.name} <:burrito:>`);
+			return;
+		}
+		else if (item.name === 'Video Card'){
+			message.channel.send(`You've bought a ${item.name}`);
+			return;
+		}
+		else if (item.name === 'DX Racer Gaming Chair'){
+			message.channel.send(`You've bought a ${item.name}`);
+			return message.channel.send('https://media.giphy.com/media/9GI7UsVM786CLzhz84/giphy.gif')
 		}
 
 		message.channel.send(`You've bought a ${item.name}`);
-    } 
+	}
     
     else if (command === 'shop') {
-		const items = await CurrencyShop.findAll();
+		const items = await CurrencyShop.getItems();
 		return message.channel.send(items.map(i => `${i.name}: ${i.cost}💰`).join('\n'), { code: true });
     } 
     
