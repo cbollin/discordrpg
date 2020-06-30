@@ -37,4 +37,4 @@ sequelize.sync().then(async () => {
 }).catch(console.error);
 
 // use force for testing
- sequelize.sync({ force: true, match: UserStats});
+ //sequelize.sync({ force: true, match: UserStats});
