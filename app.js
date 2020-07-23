@@ -1,20 +1,11 @@
-const fs = require('fs');
-const { prefix, token } = require('./config.json');
+const config = require('./config.json');
 const Discord = require('discord.js');
 
 const client = new Discord.Client();
-const { Users, CurrencyShop, UserItems, UserStats } = require('./dbObjects');
+const { Users, CurrencyShop } = require('./dbObjects');
 const { Op } = require('sequelize');
 const currency = new Discord.Collection();
-client.commands = new Discord.Collection();
-
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-
-for (const file of commandFiles) {
-	const command = require(`./commands/${file}`);
-
-	client.commands.set(command.name, command);
-}
+const PREFIX = '!';
 
 Reflect.defineProperty(currency, 'add', {
 	value: async function add(id, amount) {
@@ -37,41 +28,33 @@ Reflect.defineProperty(currency, 'getBalance', {
 });
 
 client.once('ready', async () => {
-	// add here to sync
-	// UserStats.sync();
 	const storedBalances = await Users.findAll();
 	storedBalances.forEach(b => currency.set(b.user_id, b));
 	console.log(`Logged in as ${client.user.tag}!`);
 });
 
-const PREFIX = '!';
-
 client.on('message', async message => {
-	
-	if (!message.content.startsWith(prefix) || message.author.bot) return;
-
-	const args = message.content.slice(prefix.length).split(/ +/);
-	const command = args.shift().toLowerCase();
-
-	if (!client.commands.has(command)) return;
-
-	try {
-		client.commands.get(command).execute(message, args);
-	} catch (error) {
-		console.error(error);
-		message.reply('there was an error trying to execute that command!');
-	}
-
+	if (message.author.bot) return;
 	currency.add(message.author.id, 1);
-    
-     if (command === 'inventory' || command === 'inv' || command === 'i') {
+
+	if (!message.content.startsWith(PREFIX)) return;
+	const input = message.content.slice(PREFIX.length).trim();
+	if (!input.length) return;
+	const [, command, commandArgs] = input.match(/(\w+)\s*([\s\S]*)/);
+
+	if (command === 'balance') {
+		const target = message.mentions.users.first() || message.author;
+		return message.channel.send(`${target.tag} has ${currency.getBalance(target.id)}💰`);
+	} 
+
+	else if (command === 'inventory' || command === 'inv' || command === 'i') {
 		const target = message.mentions.users.first() || message.author;
 		const user = await Users.findOne({ where: { user_id: target.id } });
 		const items = await user.getItems();
 
 		if (!items.length) return message.channel.send(`${target.tag} has nothing!`);
 		return message.channel.send(`${target.tag} currently has ${items.map(t => `${t.amount} ${t.item.name}`).join(', ')}`);
-    } 
+	} 
     
     else if (command === 'give') {
 		const currentAmount = currency.getBalance(message.author.id);
@@ -86,10 +69,9 @@ client.on('message', async message => {
 		currency.add(transferTarget.id, transferAmount);
 
 		return message.channel.send(`Successfully transferred ${transferAmount}💰 to ${transferTarget.tag}. Your current balance is ${currency.getBalance(message.author.id)}💰`);
-	} 
-	
-    
-    else if (command === 'buy') {
+	}
+
+	else if (command === 'buy') {
 		const item = await CurrencyShop.findOne({ where: { name: { [Op.like]: commandArgs } } });
 		if (!item) return message.channel.send('That item doesn\'t exist.');
 		if (item.cost > currency.getBalance(message.author.id)) {
@@ -123,23 +105,74 @@ client.on('message', async message => {
 		}
 
 		message.channel.send(`You've bought a ${item.name}`);
-	}
-    
-    else if (command === 'shop') {
-		const items = await CurrencyShop.getItems();
+	} 
+	
+	else if (command === 'shop') {
+		const items = await CurrencyShop.findAll();
 		return message.channel.send(items.map(i => `${i.name}: ${i.cost}💰`).join('\n'), { code: true });
-    } 
-    
-    else if (command === 'leaderboard') {
+	} 
+
+	else if (command === 'help'){
+		return message.channel.send(`Commands: !shop | !buy | !inventory | !profile | !give User Amount | !leaderboard`);
+	}
+
+	else if (command === 'profile' || command === 'p'){
+		const target = message.mentions.users.first() || message.author;
+		console.log(target)
+		var avatar = target.displayAvatarURL({ format: "png", dynamic: true });
+		var money = `${currency.getBalance(target.id)}`
+
+		var ss = currency.sort((a, b) => b.balance - a.balance)
+		.filter(user => client.users.cache.has(user.user_id))
+		.first(100)
+		.map((user, position) => `${position + 1} ${(client.users.cache.get(user.user_id).tag)}`)
+
+        const exampleEmbed = new Discord.MessageEmbed()
+            .setColor('#0099ff')
+            .setURL('')
+            .setTitle('Noob')
+            .addFields(
+                { name: 'PROGRESS', value: 'Level: 1 (0.00%)\nXP: 0 (0.00%)\nArea: Starting' },
+                { name: 'STATS', value: ':dagger: ATK: 1\n:shield: DEF: 1\n:heart: LIFE: 10/10' },
+                { name: 'EQUIPMENT', value: '<:orb:684419011760750623> Orb [Regular]\n:shield: Armor [Regular]', inline: true },
+                { name: 'MONEY', value: `<:oldgaycoin:259774901454503936> ${money}`, inline: true },
+            )
+            .setAuthor(`${target.username}`, avatar, '')
+            .setThumbnail(avatar)
+            // .setImage('https://media1.tenor.com/images/0390f1b0853b4957c8d8ccf88ae2b65f/tenor.gif')
+            .setTimestamp()
+            .setFooter(`Current Leader: ${ss[0].slice(2,9)}`, 'https://mir-s3-cdn-cf.behance.net/project_modules/disp/ea701046715833.588f83572fcfe.gif');
+
+            message.channel.send(exampleEmbed);
+	}
+	
+	else if (command === 'dkp') {
+		const target = message.mentions.users.first() || message.author;
+		var bal = currency.getBalance(target.id);
+
+		if(bal <= 1000){
+			return message.channel.send(`Every post a beautiful baby boar is slain, please say sorry. Total 🐗 kills: ${currency.getBalance(target.id)}/1000 `);
+		} else if (bal <= 1500){
+			return message.channel.send(`You have entered ratmode! Total 🐀 kills: ${currency.getBalance(target.id)}/2000`);
+		} else if (bal <= 2000){
+			return message.channel.send(`Skiddle Skaddle you're a bug boy 🐛 ${currency.getBalance(target.id)}/3000`);
+		} else if (bal <= 3000){
+			return message.channel.send(`Chickens unlocked! 🐓`);
+		}
+
+		return message.channel.send(`${target.tag} has ${currency.getBalance(target.id)} 🐲`);
+	} 
+	
+	else if (command === 'leaderboard'|| command === 'lb') {
 		return message.channel.send(
 			currency.sort((a, b) => b.balance - a.balance)
 				.filter(user => client.users.cache.has(user.user_id))
 				.first(10)
-				.map((user, position) => `(${position + 1}) ${(client.users.cache.get(user.user_id).tag)}: ${user.balance}💰`)
+				.map((user, position) => `(${position + 1}) ${(client.users.cache.get(user.user_id).tag)}: ${user.balance}`)
 				.join('\n'),
 			{ code: true }
 		);
-    } 
+	}
 });
 
-client.login(token);
+client.login(config.token);
