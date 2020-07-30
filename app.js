@@ -92,12 +92,12 @@ client.on('message', async message => {
 			message.channel.send(`You've bought a ${item.name} <:gfuel:725912048872980541>`);
 			return;
 		} else if (item.name === 'Panchos Burrito'){
-			message.channel.send(`You've bought a ${item.name} <:burrito:>`);
+			message.channel.send(`You've bought a ${item.name} 🌯`);
 			return;
 		}
 		else if (item.name === 'Video Card'){
 			message.channel.send(`You've bought a ${item.name}`);
-			return;
+			return message.channel.send('https://giphy.com/gifs/90s-retro-commercials-d2Z7NqwF3yImFNHW')
 		}
 		else if (item.name === 'DX Racer Gaming Chair'){
 			message.channel.send(`You've bought a ${item.name}`);
@@ -110,15 +110,53 @@ client.on('message', async message => {
 	else if (command === 'shop') {
 		const items = await CurrencyShop.findAll();
 		return message.channel.send(items.map(i => `${i.name}: ${i.cost}💰`).join('\n'), { code: true });
+	}
+
+	else if (command === 'cfhead'){
+
+		const currentAmount = currency.getBalance(message.author.id);
+		const transferAmount = commandArgs.split(/ +/).find(arg => !/<@!?\d+>/.test(arg));
+
+		if (!transferAmount || isNaN(transferAmount)) return message.channel.send(`Sorry ${message.author}, that's an invalid amount`);
+		if (transferAmount > currentAmount) return message.channel.send(`Sorry ${message.author} you don't have that much.`);
+		if (transferAmount <= 0) return message.channel.send(`Please enter an amount greater than zero, ${message.author}`);
+
+		x = (Math.floor(Math.random() * 2) == 0);
+		console.log(x);
+
+		if(x)
+		{
+			currency.add(message.author.id, transferAmount - 1);
+			console.log(transferAmount);
+			return message.channel.send(`Heads! 🎉 ${transferAmount} won! Balance: ${currency.getBalance(message.author.id)}.`);
+		} else
+		{
+			currency.add(message.author.id, -transferAmount - 1);
+			console.log(transferAmount);
+			return message.channel.send(`Tails! 😣 ${transferAmount} lost! Balance: ${currency.getBalance(message.author.id)}.`);
+		}
+	}
+
+	else if (command === 'q' || command === 'quest') {
+		var level = Math.floor((Math.random() * 3) + 1);
+		const target = message.mentions.users.first() || message.author;
+		if(level === 1){
+			currency.add(message.author.id, 20);
+			return message.channel.send(`You killed da 🐗. 💰 +20!`);
+		} else if(level === 2){
+			currency.add(message.author.id, 5);
+			return message.channel.send(`You found some spare change on a 🐀. 💰 +5!`);
+		}
+		currency.add(message.author.id, 10);
+		return message.channel.send(`Skittle Skaddle you receive the 🐛 blessing. 💰 +10!`);
 	} 
 
 	else if (command === 'help'){
-		return message.channel.send(`Commands: !shop | !buy | !inventory | !profile | !give User Amount | !leaderboard`);
+		return message.channel.send(`Commands: !quest/!q | !shop | !buy | !inventory/!i | !profile/!p | !give User Amount | !leaderboard/!lb`);
 	}
 
 	else if (command === 'profile' || command === 'p'){
 		const target = message.mentions.users.first() || message.author;
-		console.log(target)
 		var avatar = target.displayAvatarURL({ format: "png", dynamic: true });
 		var money = `${currency.getBalance(target.id)}`
 
@@ -162,6 +200,7 @@ client.on('message', async message => {
 
 		return message.channel.send(`${target.tag} has ${currency.getBalance(target.id)} 🐲`);
 	} 
+
 	
 	else if (command === 'leaderboard'|| command === 'lb') {
 		return message.channel.send(
