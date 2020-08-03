@@ -42,7 +42,7 @@ client.on('message', async message => {
 	if (!input.length) return;
 	const [, command, commandArgs] = input.match(/(\w+)\s*([\s\S]*)/);
 
-	if (command === 'balance') {
+	if (command === 'balance' || command === 'bal') {
 		const target = message.mentions.users.first() || message.author;
 		return message.channel.send(`${target.tag} has ${currency.getBalance(target.id)}💰`);
 	} 
@@ -97,12 +97,12 @@ client.on('message', async message => {
 		}
 		else if (item.name === 'Video Card'){
 			message.channel.send(`You've bought a ${item.name}`);
-			return message.channel.send('https://giphy.com/gifs/90s-retro-commercials-d2Z7NqwF3yImFNHW')
-		}
+			return message.channel.send('https://giphy.com/gifs/90s-retro-commercials-d2Z7NqwF3yImFNHW');
+        }
 		else if (item.name === 'DX Racer Gaming Chair'){
 			message.channel.send(`You've bought a ${item.name}`);
-			return message.channel.send('https://media.giphy.com/media/9GI7UsVM786CLzhz84/giphy.gif')
-		}
+			return message.channel.send('https://media.giphy.com/media/9GI7UsVM786CLzhz84/giphy.gif');
+        }
 
 		message.channel.send(`You've bought a ${item.name}`);
 	} 
@@ -112,7 +112,20 @@ client.on('message', async message => {
 		return message.channel.send(items.map(i => `${i.name}: ${i.cost}💰`).join('\n'), { code: true });
 	}
 
-	else if (command === 'cfhead'){
+	//else if (command === 'lose') {
+ //       const currentAmount = currency.getBalance(message.author.id);
+ //       const transferAmount = commandArgs.split(/ +/).find(arg => !/<@!?\d+>/.test(arg));
+
+ //       if (!transferAmount || isNaN(transferAmount)) return message.channel.send(`Sorry ${message.author}, that's an invalid amount`);
+ //       if (transferAmount > currentAmount) return message.channel.send(`Sorry ${message.author} you don't have that much.`);
+	//	if (transferAmount <= 0) return message.channel.send(`Please enter an amount greater than zero, ${message.author}`);
+
+	//	currency.add(message.author.id, -transferAmount - 1);
+
+ //       return message.channel.send(` ${transferAmount} lost! Balance: ${currency.getBalance(message.author.id)}.`);
+ //   }
+
+	else if (command === 'cf'){
 
 		const currentAmount = currency.getBalance(message.author.id);
 		const transferAmount = commandArgs.split(/ +/).find(arg => !/<@!?\d+>/.test(arg));
@@ -121,8 +134,7 @@ client.on('message', async message => {
 		if (transferAmount > currentAmount) return message.channel.send(`Sorry ${message.author} you don't have that much.`);
 		if (transferAmount <= 0) return message.channel.send(`Please enter an amount greater than zero, ${message.author}`);
 
-		x = (Math.floor(Math.random() * 2) == 0);
-		console.log(x);
+		x = (Math.floor(Math.random() * 2) === 0);
 
 		if(x)
 		{
@@ -140,30 +152,56 @@ client.on('message', async message => {
 	else if (command === 'q' || command === 'quest') {
 		var level = Math.floor((Math.random() * 3) + 1);
 		const target = message.mentions.users.first() || message.author;
-		if(level === 1){
-			currency.add(message.author.id, 20);
-			return message.channel.send(`You killed da 🐗. 💰 +20!`);
-		} else if(level === 2){
-			currency.add(message.author.id, 5);
-			return message.channel.send(`You found some spare change on a 🐀. 💰 +5!`);
-		}
-		currency.add(message.author.id, 10);
-		return message.channel.send(`Skittle Skaddle you receive the 🐛 blessing. 💰 +10!`);
+
+		var bal = currency.getBalance(target.id);
+
+		if (bal <= 1000) {
+            if (level === 1) {
+                currency.add(message.author.id, 20);
+				return message.channel.send(`🐛 Zone: You killed da 🐗. 💰 +20!`);
+            } else if (level === 2) {
+                currency.add(message.author.id, 5);
+				return message.channel.send(`🐛 Zone: You found some spare change on a 🐀. 💰 +5!`);
+            }
+            currency.add(message.author.id, 10);
+			return message.channel.send(`🐛 Zone: Skittle Skaddle you receive the 🐛 blessing. 💰 +10!`);
+		} else if (bal >= 1000 && bal <= 5000) {
+            if (level === 1) {
+                currency.add(message.author.id, 50);
+				return message.channel.send(`Spoop City 👻: Spooper slain 👻. 💰 +20!`);
+			} else if (level === 2) {
+                currency.add(message.author.id, 75);
+				return message.channel.send(`Spoop City 👻: Mouse gang appears! 🐭🐭🐭. You kill them. 💰 +40!`);
+            }
+            currency.add(message.author.id, 100);
+			return message.channel.send(`Spoop City 👻: Lobster dinner 🦞. 💰 +60!`);
+        };
 	} 
 
-	else if (command === 'help'){
-		return message.channel.send(`Commands: !quest/!q | !shop | !buy | !inventory/!i | !profile/!p | !give User Amount | !leaderboard/!lb`);
-	}
+	else if (command === 'qinfo' || command === 'questinfo' || command === 'qi') {
 
-	else if (command === 'profile' || command === 'p'){
-		const target = message.mentions.users.first() || message.author;
-		var avatar = target.displayAvatarURL({ format: "png", dynamic: true });
-		var money = `${currency.getBalance(target.id)}`
+        const exampleEmbed = new Discord.MessageEmbed()
+            .setColor('#0099ff')
+            .setURL('')
+            .setTitle('Quest Areas')
+            .addFields(
+				{ name: 'Area 1', value: '🐛 Zone' },
+				{ name: 'Area 2', value: '1000 💰 : 👻 City' },
+            )
 
-		var ss = currency.sort((a, b) => b.balance - a.balance)
-		.filter(user => client.users.cache.has(user.user_id))
-		.first(100)
-		.map((user, position) => `${position + 1} ${(client.users.cache.get(user.user_id).tag)}`)
+        message.channel.send(exampleEmbed);
+    } else if (command === 'help') {
+        return message.channel.send(
+            `Commands: !quest/!q | !shop | !buy | !inventory/!i | !profile/!p | !give User Amount | !leaderboard/!lb`);
+    } else if (command === 'profile' || command === 'p') {
+        const target = message.mentions.users.first() || message.author;
+        var avatar = target.displayAvatarURL({ format: "png", dynamic: true });
+        var money = `${currency.getBalance(target.id)}`;
+
+        var ss = currency.sort((a, b) => b.balance - a.balance)
+            .filter(user => client.users.cache.has(user.user_id))
+            .first(100)
+            .map((user, position) => `${position + 1} ${(client.users.cache.get(user.user_id).tag)}`);
 
         const exampleEmbed = new Discord.MessageEmbed()
             .setColor('#0099ff')
@@ -172,46 +210,49 @@ client.on('message', async message => {
             .addFields(
                 { name: 'PROGRESS', value: 'Level: 1 (0.00%)\nXP: 0 (0.00%)\nArea: Starting' },
                 { name: 'STATS', value: ':dagger: ATK: 1\n:shield: DEF: 1\n:heart: LIFE: 10/10' },
-                { name: 'EQUIPMENT', value: '<:orb:684419011760750623> Orb [Regular]\n:shield: Armor [Regular]', inline: true },
+                {
+                    name: 'EQUIPMENT',
+                    value: '<:orb:684419011760750623> Orb [Regular]\n:shield: Armor [Regular]',
+                    inline: true
+                },
                 { name: 'MONEY', value: `<:oldgaycoin:259774901454503936> ${money}`, inline: true },
             )
             .setAuthor(`${target.username}`, avatar, '')
             .setThumbnail(avatar)
             // .setImage('https://media1.tenor.com/images/0390f1b0853b4957c8d8ccf88ae2b65f/tenor.gif')
             .setTimestamp()
-            .setFooter(`Current Leader: ${ss[0].slice(2,9)}`, 'https://mir-s3-cdn-cf.behance.net/project_modules/disp/ea701046715833.588f83572fcfe.gif');
+            .setFooter(`Current Leader: ${ss[0].slice(2, 9)}`,
+                'https://mir-s3-cdn-cf.behance.net/project_modules/disp/ea701046715833.588f83572fcfe.gif');
 
-            message.channel.send(exampleEmbed);
-	}
-	
-	else if (command === 'dkp') {
-		const target = message.mentions.users.first() || message.author;
-		var bal = currency.getBalance(target.id);
+        message.channel.send(exampleEmbed);
+    } else if (command === 'dkp') {
+        const target = message.mentions.users.first() || message.author;
+        var bal = currency.getBalance(target.id);
 
-		if(bal <= 1000){
-			return message.channel.send(`Every post a beautiful baby boar is slain, please say sorry. Total 🐗 kills: ${currency.getBalance(target.id)}/1000 `);
-		} else if (bal <= 1500){
-			return message.channel.send(`You have entered ratmode! Total 🐀 kills: ${currency.getBalance(target.id)}/2000`);
-		} else if (bal <= 2000){
-			return message.channel.send(`Skiddle Skaddle you're a bug boy 🐛 ${currency.getBalance(target.id)}/3000`);
-		} else if (bal <= 3000){
-			return message.channel.send(`Chickens unlocked! 🐓`);
-		}
+        if (bal <= 1000) {
+            return message.channel.send(
+                `Every post a beautiful baby boar is slain, please say sorry. Total 🐗 kills: ${
+                currency.getBalance(target.id)}/1000 `);
+        } else if (bal <= 1500) {
+            return message.channel.send(
+                `You have entered ratmode! Total 🐀 kills: ${currency.getBalance(target.id)}/2000`);
+        } else if (bal <= 2000) {
+            return message.channel.send(`Skiddle Skaddle you're a bug boy 🐛 ${currency.getBalance(target.id)}/3000`);
+        } else if (bal <= 3000) {
+            return message.channel.send(`Chickens unlocked! 🐓`);
+        }
 
-		return message.channel.send(`${target.tag} has ${currency.getBalance(target.id)} 🐲`);
-	} 
-
-	
-	else if (command === 'leaderboard'|| command === 'lb') {
-		return message.channel.send(
-			currency.sort((a, b) => b.balance - a.balance)
-				.filter(user => client.users.cache.has(user.user_id))
-				.first(10)
-				.map((user, position) => `(${position + 1}) ${(client.users.cache.get(user.user_id).tag)}: ${user.balance}`)
-				.join('\n'),
-			{ code: true }
-		);
-	}
+        return message.channel.send(`${target.tag} has ${currency.getBalance(target.id)} 🐲`);
+    } else if (command === 'leaderboard' || command === 'lb') {
+        return message.channel.send(
+            currency.sort((a, b) => b.balance - a.balance)
+            .filter(user => client.users.cache.has(user.user_id))
+            .first(10)
+            .map((user, position) => `(${position + 1}) ${(client.users.cache.get(user.user_id).tag)}: ${user.balance}`)
+            .join('\n'),
+            { code: true }
+        );
+    }
 });
 
 client.login(config.token);
