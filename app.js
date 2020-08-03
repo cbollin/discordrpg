@@ -176,7 +176,23 @@ client.on('message', async message => {
             currency.add(message.author.id, 100);
 			return message.channel.send(`Spoop City 👻: Lobster dinner 🦞. 💰 +60!`);
         };
-	} 
+	} else if (command === 'dkp') {
+        const target = message.mentions.users.first() || message.author;
+        var bal = currency.getBalance(target.id);
+
+        if (bal <= 1000) {
+            return message.channel.send(
+                `Every post a beautiful baby boar is slain, please say sorry. Total 🐗 kills: ${
+                currency.getBalance(target.id)}/1000 `);
+		} else if (bal >= 1000 && bal <= 5000) {
+            return message.channel.send(
+                `Welcome to Spoop City 👻 Total kills: ${currency.getBalance(target.id)}/5000`);
+        } else if (bal > 5000) {
+            return message.channel.send(`Nothin here yet! ${currency.getBalance(target.id)}/3000`);
+        }
+
+        return message.channel.send(`${target.tag} has ${currency.getBalance(target.id)} 🐲`);
+    }
 
 	else if (command === 'qinfo' || command === 'questinfo' || command === 'qi') {
 
@@ -185,9 +201,9 @@ client.on('message', async message => {
             .setURL('')
             .setTitle('Quest Areas')
             .addFields(
-				{ name: 'Area 1', value: '🐛 Zone' },
-				{ name: 'Area 2', value: '1000 💰 : 👻 City' },
-            )
+                { name: 'Area 1', value: '🐛 Bug Zone' },
+				{ name: 'Area 2', value: '1000+ Unlocks: 👻 Spoop City' },
+            );
 
         message.channel.send(exampleEmbed);
     } else if (command === 'help') {
@@ -225,24 +241,6 @@ client.on('message', async message => {
                 'https://mir-s3-cdn-cf.behance.net/project_modules/disp/ea701046715833.588f83572fcfe.gif');
 
         message.channel.send(exampleEmbed);
-    } else if (command === 'dkp') {
-        const target = message.mentions.users.first() || message.author;
-        var bal = currency.getBalance(target.id);
-
-        if (bal <= 1000) {
-            return message.channel.send(
-                `Every post a beautiful baby boar is slain, please say sorry. Total 🐗 kills: ${
-                currency.getBalance(target.id)}/1000 `);
-        } else if (bal <= 1500) {
-            return message.channel.send(
-                `You have entered ratmode! Total 🐀 kills: ${currency.getBalance(target.id)}/2000`);
-        } else if (bal <= 2000) {
-            return message.channel.send(`Skiddle Skaddle you're a bug boy 🐛 ${currency.getBalance(target.id)}/3000`);
-        } else if (bal <= 3000) {
-            return message.channel.send(`Chickens unlocked! 🐓`);
-        }
-
-        return message.channel.send(`${target.tag} has ${currency.getBalance(target.id)} 🐲`);
     } else if (command === 'leaderboard' || command === 'lb') {
         return message.channel.send(
             currency.sort((a, b) => b.balance - a.balance)
