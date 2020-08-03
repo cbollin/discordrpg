@@ -1,13 +1,13 @@
-const config = require('./config.json');
-const Discord = require('discord.js');
+const config = require("./config.json");
+const Discord = require("discord.js");
 
 const client = new Discord.Client();
-const { Users, CurrencyShop } = require('./dbObjects');
-const { Op } = require('sequelize');
+const { Users, CurrencyShop } = require("./dbObjects");
+const { Op } = require("sequelize");
 const currency = new Discord.Collection();
-const PREFIX = '!';
+const PREFIX = "!";
 
-Reflect.defineProperty(currency, 'add', {
+Reflect.defineProperty(currency, "add", {
 	value: async function add(id, amount) {
 		const user = currency.get(id);
 		if (user) {
@@ -20,20 +20,20 @@ Reflect.defineProperty(currency, 'add', {
 	},
 });
 
-Reflect.defineProperty(currency, 'getBalance', {
+Reflect.defineProperty(currency, "getBalance", {
 	value: function getBalance(id) {
 		const user = currency.get(id);
 		return user ? user.balance : 0;
 	},
 });
 
-client.once('ready', async () => {
+client.once("ready", async () => {
 	const storedBalances = await Users.findAll();
 	storedBalances.forEach(b => currency.set(b.user_id, b));
 	console.log(`Logged in as ${client.user.tag}!`);
 });
 
-client.on('message', async message => {
+client.on("message", async message => {
 	if (message.author.bot) return;
 	currency.add(message.author.id, 1);
 
@@ -42,21 +42,21 @@ client.on('message', async message => {
 	if (!input.length) return;
 	const [, command, commandArgs] = input.match(/(\w+)\s*([\s\S]*)/);
 
-	if (command === 'balance' || command === 'bal') {
+	if (command === "balance" || command === "bal") {
 		const target = message.mentions.users.first() || message.author;
 		return message.channel.send(`${target.tag} has ${currency.getBalance(target.id)}💰`);
 	} 
 
-	else if (command === 'inventory' || command === 'inv' || command === 'i') {
+	else if (command === "inventory" || command === "inv" || command === "i") {
 		const target = message.mentions.users.first() || message.author;
 		const user = await Users.findOne({ where: { user_id: target.id } });
 		const items = await user.getItems();
 
 		if (!items.length) return message.channel.send(`${target.tag} has nothing!`);
-		return message.channel.send(`${target.tag} currently has ${items.map(t => `${t.amount} ${t.item.name}`).join(', ')}`);
+		return message.channel.send(`${target.tag} currently has ${items.map(t => `${t.amount} ${t.item.name}`).join(", ")}`);
 	} 
     
-    else if (command === 'give') {
+    else if (command === "give") {
 		const currentAmount = currency.getBalance(message.author.id);
 		const transferAmount = commandArgs.split(/ +/).find(arg => !/<@!?\d+>/.test(arg));
 		const transferTarget = message.mentions.users.first();
@@ -71,9 +71,9 @@ client.on('message', async message => {
 		return message.channel.send(`Successfully transferred ${transferAmount}💰 to ${transferTarget.tag}. Your current balance is ${currency.getBalance(message.author.id)}💰`);
 	}
 
-	else if (command === 'buy') {
+	else if (command === "buy") {
 		const item = await CurrencyShop.findOne({ where: { name: { [Op.like]: commandArgs } } });
-		if (!item) return message.channel.send('That item doesn\'t exist.');
+		if (!item) return message.channel.send("That item doesn't exist.");
 		if (item.cost > currency.getBalance(message.author.id)) {
 			return message.channel.send(`You don't have enough currency, ${message.author}`);
 		}
@@ -82,34 +82,29 @@ client.on('message', async message => {
 		currency.add(message.author.id, -item.cost);
 		await user.addItem(item);
 
-		if(item.name === 'Scoop'){
-			message.channel.send(`You've bought a ${item.name} <:scoop:259512211557449729>`);
-			return;
-		} else if (item.name === 'Chip'){
-			message.channel.send(`You've bought a ${item.name} <:chip:725911717149802516>`);
-			return;
-		} else if (item.name === 'Gamer Fuel'){
-			message.channel.send(`You've bought a ${item.name} <:gfuel:725912048872980541>`);
-			return;
-		} else if (item.name === 'Panchos Burrito'){
-			message.channel.send(`You've bought a ${item.name} 🌯`);
-			return;
+		if(item.name === "Scoop"){
+            return message.channel.send(`You've bought a ${item.name} <:scoop:259512211557449729>`);
+		} else if (item.name === "Chip"){
+            return message.channel.send(`You've bought a ${item.name} <:chip:725911717149802516>`);
+		} else if (item.name === "Gamer Fuel"){
+            return message.channel.send(`You've bought a ${item.name} <:gfuel:725912048872980541>`);
+		} else if (item.name === "Panchos Burrito"){
+            return message.channel.send(`You've bought a ${item.name} 🌯`);
 		}
-		else if (item.name === 'Video Card'){
-			message.channel.send(`You've bought a ${item.name}`);
-			return message.channel.send('https://giphy.com/gifs/90s-retro-commercials-d2Z7NqwF3yImFNHW');
+		else if (item.name === "Video Card"){
+			return message.channel.send(`You've bought a ${ item.name }`, "https://giphy.com/gifs/90s-retro-commercials-d2Z7NqwF3yImFNHW");
         }
-		else if (item.name === 'DX Racer Gaming Chair'){
-			message.channel.send(`You've bought a ${item.name}`);
-			return message.channel.send('https://media.giphy.com/media/9GI7UsVM786CLzhz84/giphy.gif');
+		else if (item.name === "DX Racer Gaming Chair"){
+			message.channel.send();
+			return message.channel.send(`You've bought a ${item.name}`, "https://media.giphy.com/media/9GI7UsVM786CLzhz84/giphy.gif");
         }
 
 		message.channel.send(`You've bought a ${item.name}`);
 	} 
 	
-	else if (command === 'shop') {
+	else if (command === "shop") {
 		const items = await CurrencyShop.findAll();
-		return message.channel.send(items.map(i => `${i.name}: ${i.cost}💰`).join('\n'), { code: true });
+		return message.channel.send(items.map(i => `${i.name}: ${i.cost}💰`).join("\n"), { code: true });
 	}
 
 	//else if (command === 'lose') {
@@ -125,7 +120,7 @@ client.on('message', async message => {
  //       return message.channel.send(` ${transferAmount} lost! Balance: ${currency.getBalance(message.author.id)}.`);
  //   }
 
-	else if (command === 'cf'){
+	else if (command === "cf"){
 
 		const currentAmount = currency.getBalance(message.author.id);
 		const transferAmount = commandArgs.split(/ +/).find(arg => !/<@!?\d+>/.test(arg));
@@ -149,7 +144,7 @@ client.on('message', async message => {
 		}
 	}
 
-	else if (command === 'q' || command === 'quest') {
+	else if (command === "q" || command === "quest") {
 		var level = Math.floor((Math.random() * 3) + 1);
 		const target = message.mentions.users.first() || message.author;
 
@@ -176,7 +171,7 @@ client.on('message', async message => {
             currency.add(message.author.id, 100);
 			return message.channel.send(`Spoop City 👻: Lobster dinner 🦞. 💰 +60!`);
         };
-	} else if (command === 'dkp') {
+	} else if (command === "dkp") {
         const target = message.mentions.users.first() || message.author;
         var bal = currency.getBalance(target.id);
 
@@ -194,22 +189,22 @@ client.on('message', async message => {
         return message.channel.send(`${target.tag} has ${currency.getBalance(target.id)} 🐲`);
     }
 
-	else if (command === 'qinfo' || command === 'questinfo' || command === 'qi') {
+	else if (command === "qinfo" || command === "questinfo" || command === "qi") {
 
         const exampleEmbed = new Discord.MessageEmbed()
-            .setColor('#0099ff')
-            .setURL('')
-            .setTitle('Quest Areas')
+            .setColor("#0099ff")
+            .setURL("")
+            .setTitle("Quest Areas")
             .addFields(
-                { name: 'Area 1', value: '🐛 Bug Zone' },
-				{ name: 'Area 2', value: '1000+ Unlocks: 👻 Spoop City' },
+                { name: "Area 1", value: "🐛 Bug Zone" },
+				{ name: "Area 2", value: "1000+ Unlocks: 👻 Spoop City" },
             );
 
         message.channel.send(exampleEmbed);
-    } else if (command === 'help') {
+    } else if (command === "help") {
         return message.channel.send(
             `Commands: !quest/!q | !shop | !buy | !inventory/!i | !profile/!p | !give User Amount | !leaderboard/!lb`);
-    } else if (command === 'profile' || command === 'p') {
+    } else if (command === "profile" || command === "p") {
         const target = message.mentions.users.first() || message.author;
         var avatar = target.displayAvatarURL({ format: "png", dynamic: true });
         var money = `${currency.getBalance(target.id)}`;
@@ -220,34 +215,34 @@ client.on('message', async message => {
             .map((user, position) => `${position + 1} ${(client.users.cache.get(user.user_id).tag)}`);
 
         const exampleEmbed = new Discord.MessageEmbed()
-            .setColor('#0099ff')
-            .setURL('')
-            .setTitle('Noob')
+            .setColor("#0099ff")
+            .setURL("")
+            .setTitle("Noob")
             .addFields(
-                { name: 'PROGRESS', value: 'Level: 1 (0.00%)\nXP: 0 (0.00%)\nArea: Starting' },
-                { name: 'STATS', value: ':dagger: ATK: 1\n:shield: DEF: 1\n:heart: LIFE: 10/10' },
+                { name: "PROGRESS", value: "Level: 1 (0.00%)\nXP: 0 (0.00%)\nArea: Starting" },
+                { name: "STATS", value: ":dagger: ATK: 1\n:shield: DEF: 1\n:heart: LIFE: 10/10" },
                 {
-                    name: 'EQUIPMENT',
-                    value: '<:orb:684419011760750623> Orb [Regular]\n:shield: Armor [Regular]',
+                    name: "EQUIPMENT",
+                    value: "<:orb:684419011760750623> Orb [Regular]\n:shield: Armor [Regular]",
                     inline: true
                 },
-                { name: 'MONEY', value: `<:oldgaycoin:259774901454503936> ${money}`, inline: true },
+                { name: "MONEY", value: `<:oldgaycoin:259774901454503936> ${money}`, inline: true },
             )
-            .setAuthor(`${target.username}`, avatar, '')
+            .setAuthor(`${target.username}`, avatar, "")
             .setThumbnail(avatar)
             // .setImage('https://media1.tenor.com/images/0390f1b0853b4957c8d8ccf88ae2b65f/tenor.gif')
             .setTimestamp()
             .setFooter(`Current Leader: ${ss[0].slice(2, 9)}`,
-                'https://mir-s3-cdn-cf.behance.net/project_modules/disp/ea701046715833.588f83572fcfe.gif');
+                "https://mir-s3-cdn-cf.behance.net/project_modules/disp/ea701046715833.588f83572fcfe.gif");
 
         message.channel.send(exampleEmbed);
-    } else if (command === 'leaderboard' || command === 'lb') {
+    } else if (command === "leaderboard" || command === "lb") {
         return message.channel.send(
             currency.sort((a, b) => b.balance - a.balance)
             .filter(user => client.users.cache.has(user.user_id))
             .first(10)
             .map((user, position) => `(${position + 1}) ${(client.users.cache.get(user.user_id).tag)}: ${user.balance}`)
-            .join('\n'),
+            .join("\n"),
             { code: true }
         );
     }

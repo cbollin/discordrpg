@@ -3,3 +3,4 @@ database.sqlite
 node_modules/
 x.jpg
 database.sqlite
+.vs/slnx.sqlite
